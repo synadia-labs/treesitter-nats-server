@@ -24,6 +24,9 @@ The grammar handles the full NATS server configuration format:
 ```bash
 # Install dependencies
 npm install
+# This is more reliable than the npm approach, so we've split it out.
+# Assumes that you have rust/cargo installed and ~/.cargo/bin in $PATH already.
+command -v tree-sitter || cargo install tree-sitter-cli
 
 # Generate the parser
 tree-sitter generate
