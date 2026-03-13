@@ -36,9 +36,12 @@ Create `~/.config/nvim/ftdetect/nats.lua`:
 ```lua
 vim.filetype.add({
   pattern = {
-    -- Match nats-server.conf and similar names
+    -- Files specifically named nats*.conf or nats-server*.conf (or with underscore)
     [".*nats[%-_]?server.*%.conf"] = "nats-server-conf",
     [".*nats%.conf"] = "nats-server-conf",
+
+    -- Any .conf file under a directory whose name contains "nats"
+    [".*/[^/]*nats[^/]*/.*%.conf"] = "nats-server-conf",
   },
 })
 ```
@@ -108,6 +111,23 @@ If you use [lazy.nvim](https://github.com/folke/lazy.nvim):
   end,
 }
 ```
+
+### 6. Additional optional improvements
+
+Let the filetype system know about the existence of `nats-server-conf` as a
+filetype, so that you can type `:set ft=nats<tab>` and have the type work:
+
+```sh
+touch "${XDG_CONFIG_HOME:-$HOME/.config}/nvim/ftplugin/nats-server-conf.lua"
+```
+
+This may help some components integrate fully, by associating the filetype
+name with hyphens with the treesitter name with underscores:
+
+```lua
+vim.treesitter.language.register('nats_server_conf', 'nats-server-conf')
+```
+
 
 ## Troubleshooting
 
