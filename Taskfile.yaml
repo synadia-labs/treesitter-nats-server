@@ -22,10 +22,29 @@ tasks:
     cmds:
       - task --list
 
+  # ── Internal ───────────────────────────────────────────────────────
+
+  _check-node:
+    internal: true
+    preconditions:
+      - sh: command -v node
+        msg: "node is not installed — install Node.js 22 LTS (see .tool-versions)"
+      - sh: |
+          major=$(node -p "process.versions.node.split(\".\")[0]")
+          test "$major" -ge 22 -a "$major" -lt 24
+        msg: >-
+          Node.js >=22, <24 is required (found {{.NODE_VERSION}}).
+          tree-sitter-cli 0.25.x does not work with Node 24+.
+          Use asdf, fnm, or nvm to switch: see .tool-versions
+    vars:
+      NODE_VERSION:
+        sh: node --version 2>/dev/null || echo "not found"
+
   # ── Build ──────────────────────────────────────────────────────────
 
   generate:
     desc: Regenerate the parser from the grammar
+    deps: [_check-node]
     sources:
       - grammar.js
     generates:
@@ -48,13 +67,13 @@ tasks:
 
   test:
     desc: Run the tree-sitter test corpus
-    deps: [generate]
+    deps: [_check-node, generate]
     cmds:
       - "{{.TS_NPX}} test"
 
   test:parse-examples:
     desc: Parse all example files and report errors
-    deps: [generate]
+    deps: [_check-node, generate]
     cmds:
       - "{{.TS_NPX}} parse examples/*.conf --stat"
 
