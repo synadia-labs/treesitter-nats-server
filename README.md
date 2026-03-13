@@ -26,13 +26,13 @@ The grammar handles the full NATS server configuration format:
 npm install
 
 # Generate the parser
-npx tree-sitter generate
+tree-sitter generate
 
 # Run tests
-npx tree-sitter test
+tree-sitter test
 
 # Parse a file
-npx tree-sitter parse examples/basic.conf
+tree-sitter parse examples/basic.conf
 ```
 
 ## Building

@@ -16,7 +16,7 @@ The [anycode extension](https://marketplace.visualstudio.com/items?itemName=nico
 3. Build the WASM module:
    ```bash
    cd tree-sitter-nats-server-conf
-   npx tree-sitter build --wasm
+   tree-sitter build --wasm
    ```
 4. Configure anycode in your VS Code `settings.json`:
    ```json
