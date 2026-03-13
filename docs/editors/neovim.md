@@ -122,11 +122,40 @@ touch "${XDG_CONFIG_HOME:-$HOME/.config}/nvim/ftplugin/nats-server-conf.lua"
 ```
 
 This may help some components integrate fully, by associating the filetype
-name with hyphens with the treesitter name with underscores:
+name with hyphens with the treesitter name with underscores, and also enables
+alternative names as markdown code fence language tags (see below):
 
 ```lua
-vim.treesitter.language.register('nats_server_conf', 'nats-server-conf')
+vim.treesitter.language.register('nats_server_conf', {
+  'nats-server-conf',
+  'nats-conf',
+  'nats_conf',
+})
 ```
+
+## Markdown code fence syntax highlighting
+
+After registering the language aliases above, all of the following code fence
+tags will produce syntax highlighting in markdown files:
+
+````markdown
+```nats_server_conf
+port: 4222
+```
+
+```nats-server-conf
+port: 4222
+```
+
+```nats-conf
+port: 4222
+```
+````
+
+If you load this repository as a Neovim plugin (e.g. via lazy.nvim using
+`"synadia-labs/treesitter-nats-server"` as a plugin spec), the aliases are
+registered automatically via `plugin/nats_server_conf.lua` — no extra
+configuration is needed.
 
 
 ## Troubleshooting
