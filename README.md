@@ -50,6 +50,9 @@ sudo make install
 - [Neovim](docs/editors/neovim.md) — nvim-treesitter setup with highlighting, folding, and indentation
 - [Helix](docs/editors/helix.md) — languages.toml configuration and query installation
 - [VS Code](docs/editors/vscode.md) — Extension setup with TextMate grammar fallback
+- [Emacs](docs/editors/emacs.md) — Built-in treesit (29+) and emacs-tree-sitter setup
+- [Zed](docs/editors/zed.md) — Extension with tree-sitter grammar and query files
+- [Nova](docs/editors/nova.md) — Panic Nova extension with syntax definition
 
 ## Grammar Structure
 
