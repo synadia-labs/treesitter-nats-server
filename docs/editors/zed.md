@@ -26,7 +26,7 @@ On macOS, use `~/Library/Application Support/Zed/extensions/nats-server-conf` in
 id = "nats-server-conf"
 name = "NATS Server Configuration"
 description = "Tree-sitter grammar and syntax highlighting for NATS server configuration files."
-version = "0.1.0"
+version = "0.1.1"
 schema_version = 1
 authors = ["Your Name <your@email.com>"]
 repository = "https://github.com/synadia-labs/treesitter-nats-server"
