@@ -18,12 +18,15 @@ git clone https://github.com/synadia-labs/treesitter-nats-server.git
 cd treesitter-nats-server
 make
 
-# Install into Emacs's tree-sitter directory
+# Install into Emacs's tree-sitter directory.
+# Emacs looks for the library by grammar name (nats_server_conf), so rename
+# the hyphenated build output to use underscores.
 mkdir -p ~/.emacs.d/tree-sitter
-cp libtree-sitter-nats_server_conf.so ~/.emacs.d/tree-sitter/
+cp libtree-sitter-nats-server-conf.so \
+   ~/.emacs.d/tree-sitter/libtree-sitter-nats_server_conf.so
 ```
 
-On macOS the shared library extension is `.dylib` instead of `.so`.
+On macOS the shared library extension is `.dylib` instead of `.so`; replace `.so` with `.dylib` in both the source and destination filenames above.
 
 ### 2. Create a major mode
 
@@ -132,7 +135,7 @@ Using `use-package`:
 Build the shared library as described in Option 1, then register it:
 
 ```elisp
-(tree-sitter-load 'nats_server_conf "path/to/libtree-sitter-nats_server_conf")
+(tree-sitter-load 'nats_server_conf "path/to/libtree-sitter-nats-server-conf")
 (add-to-list 'tree-sitter-major-mode-language-alist
              '(nats-server-conf-mode . nats_server_conf))
 ```
@@ -156,6 +159,6 @@ Build the shared library as described in Option 1, then register it:
 
 ## Troubleshooting
 
-- **"Cannot find shared library"**: Ensure the `.so` (or `.dylib`) file is in `~/.emacs.d/tree-sitter/` or a directory listed in `treesit-extra-load-path`
+- **"Cannot find shared library"**: Ensure the `.so` (or `.dylib`) file is in `~/.emacs.d/tree-sitter/` or a directory listed in `treesit-extra-load-path`. For the built-in `treesit` module (Option 1), the file **must** be named `libtree-sitter-nats_server_conf.so` (underscores) to match the grammar name
 - **No highlighting**: Verify the mode is active with `M-x describe-mode` and that tree-sitter is compiled in with `(treesit-available-p)`
 - **Wrong mode**: Check that `auto-mode-alist` entries match your file naming convention
