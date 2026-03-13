@@ -4,6 +4,7 @@
       "name": "nats_server_conf",
       "camelCase": "natsServerConf",
       "scope": "source.nats-server-conf",
+      "injection-regex": "nats[_-](?:server[_-])?conf",
       "path": ".",
       "file-types": [
         "conf"
