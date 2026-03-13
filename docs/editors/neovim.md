@@ -19,7 +19,7 @@ local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
 
 parser_config.nats_server_conf = {
   install_info = {
-    url = "https://github.com/philpennock/tree-sitter-nats-server-conf",
+    url = "https://github.com/philpennock/treesitter-nats-server",
     files = { "src/parser.c", "src/scanner.c" },
     branch = "main",
     generate_requires_npm = false,
@@ -93,7 +93,7 @@ If you use [lazy.nvim](https://github.com/folke/lazy.nvim):
 
     parser_config.nats_server_conf = {
       install_info = {
-        url = "https://github.com/philpennock/tree-sitter-nats-server-conf",
+        url = "https://github.com/philpennock/treesitter-nats-server",
         files = { "src/parser.c", "src/scanner.c" },
         branch = "main",
       },

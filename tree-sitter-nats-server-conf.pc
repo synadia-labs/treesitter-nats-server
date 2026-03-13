@@ -1,0 +1,10 @@
+prefix=/usr/local
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: tree-sitter-nats_server_conf
+Description: 
+URL: https://github.com/philpennock/treesitter-nats-server
+Version: 0.1.0
+Libs: -L${libdir} -ltree-sitter-nats_server_conf
+Cflags: -I${includedir}

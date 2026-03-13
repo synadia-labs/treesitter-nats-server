@@ -11,7 +11,7 @@ The [anycode extension](https://marketplace.visualstudio.com/items?itemName=nico
 1. Install the anycode extension
 2. Clone this repository:
    ```bash
-   git clone https://github.com/philpennock/tree-sitter-nats-server-conf.git
+   git clone https://github.com/philpennock/treesitter-nats-server.git
    ```
 3. Build the WASM module:
    ```bash

@@ -15,7 +15,7 @@ This guide explains how to add NATS server configuration file support to [Helix]
 Clone this repository and build the shared library:
 
 ```bash
-git clone https://github.com/philpennock/tree-sitter-nats-server-conf.git
+git clone https://github.com/philpennock/treesitter-nats-server.git
 cd tree-sitter-nats-server-conf
 tree-sitter generate
 cc -shared -fPIC -I src src/parser.c src/scanner.c -o nats_server_conf.so
@@ -40,7 +40,7 @@ roots = []
 
 [[grammar]]
 name = "nats_server_conf"
-source = { git = "https://github.com/philpennock/tree-sitter-nats-server-conf", rev = "main" }
+source = { git = "https://github.com/philpennock/treesitter-nats-server", rev = "main" }
 ```
 
 ### 3. Fetch and build the grammar
