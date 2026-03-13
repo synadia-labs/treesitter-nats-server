@@ -1,0 +1,94 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  TS: tree-sitter
+  # npx is slow but ensures the CLI is available even without a global install.
+  TS_NPX: npx tree-sitter
+
+# Editor install tasks are intentionally omitted.
+#
+# All supported editors (Neovim, Helix, Emacs, VS Code, Zed, Nova) require
+# editing user configuration files (init.lua, languages.toml, init.el, etc.)
+# in addition to copying files.  Because there is no safe, idempotent way to
+# merge into an arbitrary user config, and getting it wrong could break the
+# user's editor setup, we do not automate these installs.  See docs/editors/
+# for per-editor instructions.
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  # ── Build ──────────────────────────────────────────────────────────
+
+  generate:
+    desc: Regenerate the parser from the grammar
+    sources:
+      - grammar.js
+    generates:
+      - src/parser.c
+    cmds:
+      - "{{.TS_NPX}} generate"
+
+  build:
+    desc: Build the shared and static C libraries
+    deps: [generate]
+    cmds:
+      - make
+
+  clean:
+    desc: Remove build artifacts
+    cmds:
+      - make clean
+
+  # ── Test ───────────────────────────────────────────────────────────
+
+  test:
+    desc: Run the tree-sitter test corpus
+    deps: [generate]
+    cmds:
+      - "{{.TS_NPX}} test"
+
+  test:parse-examples:
+    desc: Parse all example files and report errors
+    deps: [generate]
+    cmds:
+      - "{{.TS_NPX}} parse examples/*.conf --stat"
+
+  # ── Install (system) ───────────────────────────────────────────────
+
+  install:
+    desc: Install the C library and query files system-wide (may need sudo)
+    deps: [build]
+    cmds:
+      - make install
+
+  uninstall:
+    desc: Remove the system-wide installation (may need sudo)
+    cmds:
+      - make uninstall
+
+  # ── CI ─────────────────────────────────────────────────────────────
+
+  ci:
+    desc: Run all CI checks
+    cmds:
+      - task: ci:test
+      - task: ci:check-github
+
+  ci:test:
+    desc: Build, test, and parse examples (used in CI)
+    cmds:
+      - task: test
+      - task: test:parse-examples
+
+  ci:check-github:
+    desc: Validate GitHub Actions workflows with zizmor
+    preconditions:
+      - sh: command -v zizmor
+        msg: "zizmor is not installed — pip install zizmor"
+    cmds:
+      - zizmor --format plain .github/workflows/
