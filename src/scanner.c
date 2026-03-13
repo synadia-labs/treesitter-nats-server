@@ -26,17 +26,24 @@ enum TokenType {
   BOOLEAN,
 };
 
+// The NATS config lexer (conf/lex.go) is very permissive with identifiers:
+// any character except whitespace and structural chars (= : { } [ ] ,) is valid.
+// We mirror this by allowing ASCII letters, digits, underscore, hyphen, and
+// all non-ASCII (Unicode) codepoints in identifiers.
+
 static bool is_ident_start(int32_t c) {
   return (c >= 'a' && c <= 'z') ||
          (c >= 'A' && c <= 'Z') ||
-         c == '_';
+         c == '_' ||
+         c >= 0x80;  // Unicode characters (e.g., prod-に)
 }
 
 static bool is_ident_char(int32_t c) {
   return (c >= 'a' && c <= 'z') ||
          (c >= 'A' && c <= 'Z') ||
          (c >= '0' && c <= '9') ||
-         c == '_';
+         c == '_' || c == '-' ||
+         c >= 0x80;  // Unicode characters
 }
 
 static bool is_bare_char(int32_t c) {
@@ -46,7 +53,8 @@ static bool is_bare_char(int32_t c) {
          c == '_' || c == '-' || c == '.' || c == ':' ||
          c == '/' || c == '~' || c == '@' || c == '!' ||
          c == '%' || c == '^' || c == '+' || c == '*' ||
-         c == '=';
+         c == '=' ||
+         c >= 0x80;  // Unicode characters
 }
 
 static bool is_bare_only_start(int32_t c) {

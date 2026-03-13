@@ -79,3 +79,30 @@ jetstream {}
   (block_definition
     name: (identifier)
     body: (block)))
+
+===
+Hyphenated block name
+===
+accounts {
+  foo-bar {
+    users = [{user: "test", password: "pass"}]
+  }
+}
+---
+(source_file
+  (block_definition
+    name: (identifier)
+    body: (block
+      (block_definition
+        name: (identifier)
+        body: (block
+          (pair
+            key: (identifier)
+            value: (array
+              (block
+                (pair
+                  key: (identifier)
+                  value: (string))
+                (pair
+                  key: (identifier)
+                  value: (string))))))))))

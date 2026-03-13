@@ -57,3 +57,13 @@ store_dir: /var/lib/nats/jetstream
     key: (identifier)
     value: (string
       (bare_string))))
+
+===
+Pair with hyphenated key
+===
+server-name: "my-server"
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (string)))
