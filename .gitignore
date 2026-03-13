@@ -6,6 +6,11 @@ build/
 prebuilds/
 target/
 
+tree-sitter-nats_server_conf.wasm
+libtree-*.a
+libtree-*.so
+src/*.o
+
 # OS files
 .DS_Store
 *.swp
@@ -18,3 +23,4 @@ target/
 
 # Logs
 *.log
+.task/

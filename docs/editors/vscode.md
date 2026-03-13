@@ -6,6 +6,12 @@ This guide explains how to add NATS server configuration file support to Visual 
 
 The [anycode extension](https://marketplace.visualstudio.com/items?itemName=nicolo-ribaudo.vscode-anycode) provides tree-sitter support in VS Code.
 
+This relies upon the tree-sitter command (install however you wish, we show
+this assuming the `cargo` command) and the `tree-sitter build --wasm` step
+relies upon being able to run an OCI image (`emscripten/emsdk`); this will
+implicitly require `docker` or `podman` or some other command which
+tree-sitter supports for that invocation.
+
 ### Setup
 
 1. Install the anycode extension
@@ -15,8 +21,9 @@ The [anycode extension](https://marketplace.visualstudio.com/items?itemName=nico
    ```
 3. Build the WASM module:
    ```bash
-   cd tree-sitter-nats-server-conf
-   npx tree-sitter build --wasm
+   cd treesitter-nats-server
+   command -v tree-sitter || cargo install tree-sitter-cli
+   tree-sitter build --wasm
    ```
 4. Configure anycode in your VS Code `settings.json`:
    ```json
