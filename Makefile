@@ -4,7 +4,7 @@ endif
 
 LANGUAGE_NAME := tree-sitter-nats-server-conf
 HOMEPAGE_URL := https://github.com/synadia-labs/treesitter-nats-server
-VERSION := 0.1.0
+VERSION := 0.1.1
 
 # repository
 SRC_DIR := src

@@ -27,7 +27,7 @@ cd ~/Library/Application\ Support/Nova/Extensions/nats-server-conf.novaextension
   "name": "NATS Server Configuration",
   "organization": "Your Name",
   "description": "Syntax highlighting for NATS server configuration files using tree-sitter.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "categories": ["languages"],
   "main": "main.js",
   "activationEvents": [
