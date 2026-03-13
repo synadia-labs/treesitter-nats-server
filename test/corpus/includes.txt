@@ -1,0 +1,41 @@
+===
+Include directive with relative path
+===
+include ./auth.conf
+---
+(source_file
+  (include_directive
+    keyword: (include_keyword)
+    path: (string
+      (bare_string))))
+
+===
+Include with quoted path
+===
+include "/etc/nats/tls.conf"
+---
+(source_file
+  (include_directive
+    keyword: (include_keyword)
+    path: (string)))
+
+===
+Multiple includes
+===
+include ./auth.conf
+include ./tls.conf
+include ./jetstream.conf
+---
+(source_file
+  (include_directive
+    keyword: (include_keyword)
+    path: (string
+      (bare_string)))
+  (include_directive
+    keyword: (include_keyword)
+    path: (string
+      (bare_string)))
+  (include_directive
+    keyword: (include_keyword)
+    path: (string
+      (bare_string))))

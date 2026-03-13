@@ -1,0 +1,81 @@
+===
+Simple block
+===
+cluster {
+  port: 6222
+}
+---
+(source_file
+  (block_definition
+    name: (identifier)
+    body: (block
+      (pair
+        key: (identifier)
+        value: (number)))))
+
+===
+Block with equals
+===
+tls = {
+  cert_file: "/etc/ssl/cert.pem"
+}
+---
+(source_file
+  (block_definition
+    name: (identifier)
+    body: (block
+      (pair
+        key: (identifier)
+        value: (string)))))
+
+===
+Block with colon
+===
+tls: {
+  cert_file: "/etc/ssl/cert.pem"
+}
+---
+(source_file
+  (block_definition
+    name: (identifier)
+    body: (block
+      (pair
+        key: (identifier)
+        value: (string)))))
+
+===
+Nested blocks
+===
+accounts {
+  SYS {
+    users = [{user: "sys", password: "pass"}]
+  }
+}
+---
+(source_file
+  (block_definition
+    name: (identifier)
+    body: (block
+      (block_definition
+        name: (identifier)
+        body: (block
+          (pair
+            key: (identifier)
+            value: (array
+              (block
+                (pair
+                  key: (identifier)
+                  value: (string))
+                (pair
+                  key: (identifier)
+                  value: (string))))))))))
+
+===
+Empty block
+===
+jetstream {}
+---
+(source_file
+  (block_definition
+    name: (identifier)
+    body: (block)))

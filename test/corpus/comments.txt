@@ -1,0 +1,38 @@
+===
+Hash comment
+===
+# This is a comment
+---
+(source_file
+  (comment))
+
+===
+Double slash comment
+===
+// This is a comment
+---
+(source_file
+  (comment))
+
+===
+Multiple comments
+===
+# First comment
+// Second comment
+# Third comment
+---
+(source_file
+  (comment)
+  (comment)
+  (comment))
+
+===
+Inline comment after pair
+===
+port: 4222 # default port
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (number))
+  (comment))

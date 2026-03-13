@@ -1,0 +1,174 @@
+===
+Boolean true
+===
+debug: true
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (boolean)))
+
+===
+Boolean false
+===
+debug: false
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (boolean)))
+
+===
+Boolean yes
+===
+debug: yes
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (boolean)))
+
+===
+Boolean no
+===
+debug: no
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (boolean)))
+
+===
+Boolean on/off
+===
+trace: on
+debug: off
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (boolean))
+  (pair
+    key: (identifier)
+    value: (boolean)))
+
+===
+Integer
+===
+port: 4222
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (number)))
+
+===
+Negative integer
+===
+offset: -1
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (number)))
+
+===
+Float
+===
+rate: 0.5
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (number)))
+
+===
+Number with size suffix KB
+===
+max_payload: 64KB
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (number)))
+
+===
+Number with size suffix GB
+===
+max_mem: 1GB
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (number)))
+
+===
+Number with duration suffix
+===
+ping_interval: 30s
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (number)))
+
+===
+Number with ms duration suffix
+===
+write_deadline: 100ms
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (number)))
+
+===
+Simple array
+===
+routes: [
+  nats-route://server1:6222
+  nats-route://server2:6222
+]
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (array
+      (string
+        (bare_string))
+      (string
+        (bare_string)))))
+
+===
+Array with commas
+===
+tags: ["web", "prod", "us-east"]
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (array
+      (string)
+      (string)
+      (string))))
+
+===
+IP address value
+===
+host: 127.0.0.1
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (string
+      (bare_string))))
+
+===
+Quoted string with escapes
+===
+password: "p@ss\"word"
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (string)))

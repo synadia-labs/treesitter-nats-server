@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+build/
+prebuilds/
+target/
+
+# OS files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

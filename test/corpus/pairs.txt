@@ -1,0 +1,59 @@
+===
+Pair with colon separator
+===
+port: 4222
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (number)))
+
+===
+Pair with equals separator
+===
+port = 4222
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (number)))
+
+===
+Multiple pairs
+===
+host: 0.0.0.0
+port: 4222
+server_name: "my-server"
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (string
+      (bare_string)))
+  (pair
+    key: (identifier)
+    value: (number))
+  (pair
+    key: (identifier)
+    value: (string)))
+
+===
+Pair with quoted string value
+===
+name: "my-server"
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (string)))
+
+===
+Pair with unquoted string value
+===
+store_dir: /var/lib/nats/jetstream
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (string
+      (bare_string))))

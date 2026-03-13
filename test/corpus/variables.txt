@@ -1,0 +1,43 @@
+===
+Variable reference
+===
+authorization {
+  token: $TOKEN
+}
+---
+(source_file
+  (block_definition
+    name: (identifier)
+    body: (block
+      (pair
+        key: (identifier)
+        value: (variable_reference)))))
+
+===
+Variable definition and reference
+===
+TOKEN: "secret"
+authorization {
+  token: $TOKEN
+}
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (string))
+  (block_definition
+    name: (identifier)
+    body: (block
+      (pair
+        key: (identifier)
+        value: (variable_reference)))))
+
+===
+Environment variable reference
+===
+password: $NATS_PASSWORD
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (variable_reference)))

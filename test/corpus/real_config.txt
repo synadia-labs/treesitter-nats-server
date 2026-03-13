@@ -1,0 +1,129 @@
+===
+Realistic full server config
+===
+# NATS Server Configuration
+server_name: "prod-east-1"
+host: 0.0.0.0
+port: 4222
+
+# Logging
+debug: false
+trace: false
+logtime: true
+
+# Limits
+max_payload: 1MB
+max_connections: 1000
+ping_interval: 30s
+
+# Authorization
+TOKEN = "s3cr3t"
+authorization {
+  token: $TOKEN
+  timeout: 5
+}
+
+# Cluster
+cluster {
+  name: "east-cluster"
+  host: 0.0.0.0
+  port: 6222
+  routes: [
+    nats-route://node2:6222
+    nats-route://node3:6222
+  ]
+}
+
+# JetStream
+jetstream {
+  store_dir: /var/lib/nats/jetstream
+  max_mem: 1GB
+  max_file: 10GB
+}
+
+include ./tls.conf
+---
+(source_file
+  (comment)
+  (pair
+    key: (identifier)
+    value: (string))
+  (pair
+    key: (identifier)
+    value: (string
+      (bare_string)))
+  (pair
+    key: (identifier)
+    value: (number))
+  (comment)
+  (pair
+    key: (identifier)
+    value: (boolean))
+  (pair
+    key: (identifier)
+    value: (boolean))
+  (pair
+    key: (identifier)
+    value: (boolean))
+  (comment)
+  (pair
+    key: (identifier)
+    value: (number))
+  (pair
+    key: (identifier)
+    value: (number))
+  (pair
+    key: (identifier)
+    value: (number))
+  (comment)
+  (pair
+    key: (identifier)
+    value: (string))
+  (block_definition
+    name: (identifier)
+    body: (block
+      (pair
+        key: (identifier)
+        value: (variable_reference))
+      (pair
+        key: (identifier)
+        value: (number))))
+  (comment)
+  (block_definition
+    name: (identifier)
+    body: (block
+      (pair
+        key: (identifier)
+        value: (string))
+      (pair
+        key: (identifier)
+        value: (string
+          (bare_string)))
+      (pair
+        key: (identifier)
+        value: (number))
+      (pair
+        key: (identifier)
+        value: (array
+          (string
+            (bare_string))
+          (string
+            (bare_string))))))
+  (comment)
+  (block_definition
+    name: (identifier)
+    body: (block
+      (pair
+        key: (identifier)
+        value: (string
+          (bare_string)))
+      (pair
+        key: (identifier)
+        value: (number))
+      (pair
+        key: (identifier)
+        value: (number))))
+  (include_directive
+    keyword: (include_keyword)
+    path: (string
+      (bare_string))))

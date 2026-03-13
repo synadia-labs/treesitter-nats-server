@@ -1,0 +1,38 @@
+{
+  "grammars": [
+    {
+      "name": "nats_server_conf",
+      "camelCase": "natsServerConf",
+      "scope": "source.nats-server-conf",
+      "path": ".",
+      "file-types": [
+        "conf"
+      ],
+      "highlights": "queries/highlights.scm",
+      "folds": "queries/folds.scm",
+      "indents": "queries/indents.scm",
+      "locals": "queries/locals.scm"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "Tree-sitter grammar for NATS server configuration files",
+    "authors": [
+      {
+        "name": "Phil Pennock"
+      }
+    ],
+    "links": {
+      "repository": "https://github.com/philpennock/treesitter-nats-server"
+    }
+  },
+  "bindings": {
+    "c": true,
+    "go": true,
+    "node": true,
+    "python": true,
+    "rust": true,
+    "swift": true
+  }
+}
