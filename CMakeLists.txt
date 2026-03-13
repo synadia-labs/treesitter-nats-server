@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.13)
 project(tree-sitter-nats-server-conf
         VERSION "0.1.0"
         DESCRIPTION "Tree-sitter grammar for NATS server configuration files"
-        HOMEPAGE_URL "https://github.com/philpennock/treesitter-nats-server"
+        HOMEPAGE_URL "https://github.com/synadia-labs/treesitter-nats-server"
         LANGUAGES C)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)

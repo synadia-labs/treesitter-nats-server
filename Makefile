@@ -3,7 +3,7 @@ $(error Windows is not supported)
 endif
 
 LANGUAGE_NAME := tree-sitter-nats-server-conf
-HOMEPAGE_URL := https://github.com/philpennock/treesitter-nats-server
+HOMEPAGE_URL := https://github.com/synadia-labs/treesitter-nats-server
 VERSION := 0.1.0
 
 # repository

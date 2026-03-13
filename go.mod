@@ -1,4 +1,4 @@
-module github.com/philpennock/treesitter-nats-server
+module github.com/synadia-labs/treesitter-nats-server
 
 go 1.22
 

@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 keywords = ["incremental", "parsing", "tree-sitter", "nats-server-conf"]
 categories = ["parser-implementations", "parsing", "text-editors"]
-repository = "https://github.com/philpennock/treesitter-nats-server"
+repository = "https://github.com/synadia-labs/treesitter-nats-server"
 edition = "2021"
 autoexamples = false
 
