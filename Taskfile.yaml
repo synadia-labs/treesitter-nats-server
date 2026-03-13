@@ -40,11 +40,21 @@ tasks:
       NODE_VERSION:
         sh: node --version 2>/dev/null || echo "not found"
 
+  _npm-deps:
+    internal: true
+    sources:
+      - package.json
+      - package-lock.json
+    generates:
+      - node_modules/.package-lock.json
+    cmds:
+      - npm ci
+
   # ── Build ──────────────────────────────────────────────────────────
 
   generate:
     desc: Regenerate the parser from the grammar
-    deps: [_check-node]
+    deps: [_check-node, _npm-deps]
     sources:
       - grammar.js
     generates:
@@ -67,13 +77,13 @@ tasks:
 
   test:
     desc: Run the tree-sitter test corpus
-    deps: [_check-node, generate]
+    deps: [_check-node, _npm-deps, generate]
     cmds:
       - "{{.TS_NPX}} test"
 
   test:parse-examples:
     desc: Parse all example files and report errors
-    deps: [_check-node, generate]
+    deps: [_check-node, _npm-deps, generate]
     cmds:
       - "{{.TS_NPX}} parse examples/*.conf --stat"
 
