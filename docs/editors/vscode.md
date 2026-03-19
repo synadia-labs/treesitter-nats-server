@@ -56,7 +56,7 @@ npm init -y
   "name": "vscode-nats-server-conf",
   "displayName": "NATS Server Configuration",
   "description": "Syntax highlighting for NATS server configuration files",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "engines": { "vscode": "^1.75.0" },
   "categories": ["Programming Languages"],
   "contributes": {
@@ -215,7 +215,7 @@ Create `language-configuration.json`:
 ```bash
 # Package and install
 npx vsce package
-code --install-extension vscode-nats-server-conf-0.1.1.vsix
+code --install-extension vscode-nats-server-conf-0.1.2.vsix
 ```
 
 Or for development, symlink into the extensions directory:
