@@ -36,3 +36,22 @@ port: 4222 # default port
     key: (identifier)
     value: (number))
   (comment))
+
+===
+Double slash comments inside array
+===
+routes = [
+  # hash comment
+  // preceding comment
+  nats-route://127.0.0.1:7246   // eol comment
+]
+---
+(source_file
+  (pair
+    key: (identifier)
+    value: (array
+      (comment)
+      (comment)
+      (string
+        (bare_string))
+      (comment))))

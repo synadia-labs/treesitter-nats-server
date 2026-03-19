@@ -218,6 +218,32 @@ bool tree_sitter_nats_server_conf_external_scanner_scan(
     return false;
   }
 
+  // --- Handle // comments ---
+  // Must come before bare_only_start, because '/' is a bare_only_start char
+  // and would otherwise greedily consume // comments as bare_strings.
+  if (valid_symbols[COMMENT] && c == '/') {
+    lexer->advance(lexer, false);
+    if (!lexer->eof(lexer) && lexer->lookahead == '/') {
+      lexer->advance(lexer, false);
+      while (!lexer->eof(lexer) && lexer->lookahead != '\n') {
+        lexer->advance(lexer, false);
+      }
+      lexer->mark_end(lexer);
+      lexer->result_symbol = COMMENT;
+      return true;
+    }
+    if (valid_symbols[BARE_STRING]) {
+      while (!lexer->eof(lexer) && is_bare_char(lexer->lookahead) &&
+             lexer->lookahead != '\n') {
+        lexer->advance(lexer, false);
+      }
+      lexer->mark_end(lexer);
+      lexer->result_symbol = BARE_STRING;
+      return true;
+    }
+    return false;
+  }
+
   // --- Handle bare strings starting with /, ~, ., or digits ---
   if (valid_symbols[BARE_STRING] && is_bare_only_start(c)) {
     bool starts_with_digit = (c >= '0' && c <= '9');
@@ -275,30 +301,6 @@ bool tree_sitter_nats_server_conf_external_scanner_scan(
     lexer->mark_end(lexer);
     lexer->result_symbol = BARE_STRING;
     return true;
-  }
-
-  // --- Handle // comments ---
-  if (valid_symbols[COMMENT] && c == '/') {
-    lexer->advance(lexer, false);
-    if (!lexer->eof(lexer) && lexer->lookahead == '/') {
-      lexer->advance(lexer, false);
-      while (!lexer->eof(lexer) && lexer->lookahead != '\n') {
-        lexer->advance(lexer, false);
-      }
-      lexer->mark_end(lexer);
-      lexer->result_symbol = COMMENT;
-      return true;
-    }
-    if (valid_symbols[BARE_STRING]) {
-      while (!lexer->eof(lexer) && is_bare_char(lexer->lookahead) &&
-             lexer->lookahead != '\n') {
-        lexer->advance(lexer, false);
-      }
-      lexer->mark_end(lexer);
-      lexer->result_symbol = BARE_STRING;
-      return true;
-    }
-    return false;
   }
 
   return false;
