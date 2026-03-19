@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 
 project(tree-sitter-nats-server-conf
-        VERSION "0.1.1"
+        VERSION "0.1.2"
         DESCRIPTION "Tree-sitter grammar for NATS server configuration files"
         HOMEPAGE_URL "https://github.com/synadia-labs/treesitter-nats-server"
         LANGUAGES C)

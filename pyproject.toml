@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tree-sitter-nats-server-conf"
 description = "Tree-sitter grammar for NATS server configuration files"
-version = "0.1.1"
+version = "0.1.2"
 keywords = ["incremental", "parsing", "tree-sitter", "nats-server-conf"]
 classifiers = [
   "Intended Audience :: Developers",
