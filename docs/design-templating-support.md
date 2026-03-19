@@ -150,6 +150,8 @@ enum TokenType {
   ERB_TAG_CONTENT,                 // content between <% %>
   ERB_COMMENT_CONTENT,             // content between <%# %>
   BARE_STRING_FRAGMENT,            // bare_string that stops at template delimiters
+  TEMPLATE_DIALECT_MARKER,         // "# nats-template-dialect:" prefix
+  TEMPLATE_DIALECT_NAME,           // dialect name word after the marker
 };
 ```
 
@@ -268,12 +270,174 @@ However, we do need `BARE_STRING_FRAGMENT` as a separate token type because
 `bare_string_fragment` needs to work inside `templated_value` which has
 different grammar context. The scanning logic is identical to `bare_string`.
 
+## Template Dialect Configuration
+
+Tree-sitter grammars compile to static C parsers — there is no runtime
+configuration mechanism, no global variables, no feature flags. The grammar
+itself has no concept of tunables. Every editor handles query customization
+differently. This section describes the three complementary mechanisms we
+use for dialect selection.
+
+### Mechanism 1: In-file Modeline (`# nats-template-dialect:`)
+
+The grammar recognizes a modeline comment as a first-class node:
+
+```
+# nats-template-dialect: jinja2
+server_name: {{ hostname }}
+port: {{ port }}
+```
+
+The modeline must be a comment matching the pattern
+`# nats-template-dialect: <language>`. It produces a parse tree node:
+
+```
+(template_dialect_modeline
+  (template_dialect_name))  ;; captures "jinja2"
+```
+
+The injection query uses the captured text as the injection language
+dynamically — the same mechanism markdown grammars use for fenced code
+block info strings:
+
+```scheme
+; Dynamic dialect from modeline — overrides all defaults when present
+(template_dialect_modeline
+  (template_dialect_name) @_dialect)
+
+; When a modeline is present, use its value for all template injections.
+; The #set! injection.language is overridden by the captured @_dialect text
+; when the editor supports content-driven injection (Neovim, Zed do).
+```
+
+This is the **most portable** mechanism: it works in any editor that
+supports tree-sitter content-driven injection, requires no editor-specific
+configuration, and the modeline is self-documenting in the config file.
+
+Recognized dialect names and their meanings:
+
+| Modeline value | Injection language | Notes |
+|----------------|-------------------|-------|
+| `jinja2` or `jinja` | `jinja2` | Jinja2 / Ansible templates |
+| `gotmpl` | `gotmpl` | Go `text/template` |
+| `erb` | `ruby` | eRuby / ERB |
+| `none` | *(no injection)* | Disable template language injection entirely |
+
+The grammar node is `template_dialect_modeline`. The scanner recognizes
+it only when the comment text matches the pattern exactly, so ordinary
+comments like `# this is not a nats-template-dialect:` are unaffected.
+
+### Mechanism 2: File Type Suffix
+
+Editors map file extensions to grammars. By registering suffixed file types,
+editors can activate both the grammar and an appropriate injection override:
+
+| File pattern | Template language |
+|-------------|-------------------|
+| `*.conf` | Base grammar, default injection (jinja2) |
+| `*.conf.j2`, `*.conf.jinja`, `*.conf.jinja2` | Jinja2 |
+| `*.conf.gotmpl` | Go templates |
+| `*.conf.erb` | ERB |
+
+This requires per-editor filetype configuration (see Editor-Specific Notes)
+but is the standard mechanism editors already use for language detection.
+
+### Mechanism 3: Alternative Injection Files
+
+We ship multiple injection query files. Users copy or symlink the
+appropriate one into their editor's query override directory:
+
+```
+queries/
+  injections.scm               # default: modeline-driven, falls back to jinja2
+  injections-jinja.scm         # {{ }} → jinja2 (hardcoded, ignores modeline)
+  injections-gotmpl.scm        # {{ }} → gotmpl (hardcoded, ignores modeline)
+  injections-erb-only.scm      # ERB only; {{ }}/{% %} not injected
+  injections-none.scm          # empty — disables all template injection
+```
+
+This is the **least portable** mechanism (requires manual per-editor setup)
+but provides the most control and works even in editors with limited
+injection support.
+
+### Precedence
+
+When multiple mechanisms are active:
+
+1. **Modeline wins** — if `# nats-template-dialect:` is present in the file,
+   it takes precedence (for editors that support content-driven injection).
+2. **Editor query override** — alternative injection files or
+   `after/queries/` overrides take effect next.
+3. **Default injections.scm** — shipped default: `{% %}` → jinja2,
+   `<% %>` → ruby, `{{ }}` → jinja2.
+
+### Grammar Node for Modeline
+
+The modeline is recognized by the external scanner as a specialized comment.
+When the scanner encounters `#` followed by whitespace and the exact string
+`nats-template-dialect:`, it produces a `TEMPLATE_DIALECT` token instead of
+`COMMENT`. The grammar rule:
+
+```javascript
+template_dialect_modeline: $ => seq(
+  '#',
+  'nats-template-dialect:',
+  field('dialect', $.template_dialect_name),
+),
+
+// Scanned by external scanner — captures the dialect name as a word
+template_dialect_name: $ => /[a-zA-Z][a-zA-Z0-9_]*/,
+```
+
+The external scanner addition:
+
+```c
+enum TokenType {
+  BARE_STRING,
+  COMMENT,
+  IDENTIFIER,
+  BOOLEAN,
+  // ...existing template tokens...
+  TEMPLATE_DIALECT_MARKER,  // "# nats-template-dialect:" prefix
+  TEMPLATE_DIALECT_NAME,    // the language name after the marker
+};
+```
+
+The scanner recognizes the full `# nats-template-dialect:` prefix as a
+single token, then the grammar's internal lexer picks up the dialect name.
+This avoids the modeline being consumed as an ordinary comment.
+
 ## Injection Queries (queries/injections.scm)
+
+The default `injections.scm` is **modeline-aware**: when a
+`template_dialect_modeline` is present, its captured dialect name drives
+injection for all template content nodes. When absent, static defaults
+apply.
 
 ```scheme
 ; Default injections for template content.
 ; These inject the template language into the content nodes
 ; so editors can provide syntax highlighting for the template expressions.
+;
+; Override priority:
+;   1. In-file modeline: # nats-template-dialect: <lang>
+;   2. Editor query overrides (after/queries/ or alternative files)
+;   3. These defaults
+
+; --- Modeline-driven injection ---
+; When the file contains "# nats-template-dialect: <lang>", use that
+; language for all brace-style template content ({{ }} and {% %}).
+; This uses content-driven injection: the captured node text becomes
+; the injection language name.
+
+(template_dialect_modeline
+  (template_dialect_name) @injection.language)
+
+; With modeline present, associate template content with the dialect.
+; Editors that support combined injection (Neovim, Zed) will use the
+; modeline language for all matching content nodes.
+
+; --- Static fallback defaults (when no modeline) ---
 
 ; Jinja-style tags are unambiguously Jinja
 ((template_tag_content) @injection.content
@@ -283,8 +447,7 @@ different grammar context. The scanning logic is identical to `bare_string`.
   (#set! injection.language "jinja2"))
 
 ; {{ }} is ambiguous between Jinja2 and Go templates.
-; Default to jinja2; editors can override based on filetype.
-; For .conf.gotmpl files, editor config should override to "gotmpl".
+; Default to jinja2; override via modeline or editor config.
 ((template_interpolation_content) @injection.content
   (#set! injection.language "jinja2"))
 
@@ -297,6 +460,32 @@ different grammar context. The scanning logic is identical to `bare_string`.
 
 ((erb_comment_content) @injection.content
   (#set! injection.language "ruby"))
+```
+
+### Alternative: queries/injections-gotmpl.scm
+
+```scheme
+; Go template injection — use for .conf.gotmpl files
+; or copy to your editor's query override directory.
+
+((template_interpolation_content) @injection.content
+  (#set! injection.language "gotmpl"))
+
+; ERB nodes still inject Ruby (ERB delimiters are unambiguous)
+((erb_interpolation_content) @injection.content
+  (#set! injection.language "ruby"))
+((erb_tag_content) @injection.content
+  (#set! injection.language "ruby"))
+((erb_comment_content) @injection.content
+  (#set! injection.language "ruby"))
+```
+
+### Alternative: queries/injections-none.scm
+
+```scheme
+; Empty — disables all template language injection.
+; Template delimiters are still highlighted via highlights.scm,
+; but no inner language is injected.
 ```
 
 ## Highlight Queries (queries/highlights.scm additions)
@@ -339,42 +528,81 @@ Editors use these associations to:
 
 ## Editor-Specific Notes
 
+### Easiest Path (All Editors)
+
+Add a modeline to the config file:
+
+```
+# nats-template-dialect: jinja2
+```
+
+This works out-of-the-box in any editor that supports tree-sitter
+content-driven injection. No editor-specific configuration required.
+
 ### Neovim (nvim-treesitter)
 
 Neovim has mature injection support. The `injections.scm` file is loaded
-automatically. To override the `{{ }}` language for Go templates, users
-would add a custom query in their nvim config:
+automatically.
 
-```lua
--- In after/queries/nats_server_conf/injections.scm
-; Override: inject gotmpl instead of jinja2 for {{ }}
-((template_interpolation_content) @injection.content
-  (#set! injection.language "gotmpl"))
-```
+**Modeline**: Works natively. Neovim's injection engine supports
+content-driven `@injection.language` captures.
 
-For filetype detection, add to `filetype.lua`:
+**Filetype override** (alternative to modeline): add to `filetype.lua`:
 ```lua
 vim.filetype.add({
   pattern = {
     [".*%.conf%.j2"] = "nats_server_conf",
+    [".*%.conf%.jinja"] = "nats_server_conf",
+    [".*%.conf%.jinja2"] = "nats_server_conf",
     [".*%.conf%.gotmpl"] = "nats_server_conf",
     [".*%.conf%.erb"] = "nats_server_conf",
   },
 })
 ```
 
+**Query override** (alternative to modeline): For Go templates without
+a modeline, override in `after/queries/nats_server_conf/injections.scm`:
+```scheme
+; extends
+; Override: inject gotmpl instead of jinja2 for {{ }}
+((template_interpolation_content) @injection.content
+  (#set! injection.language "gotmpl"))
+```
+
+Or copy `queries/injections-gotmpl.scm` to
+`after/queries/nats_server_conf/injections.scm` (without `; extends`
+to fully replace rather than extend).
+
 ### VS Code
 
 VS Code uses tree-sitter via extensions (e.g., via `vscode-anycode` or
-dedicated extensions). Injection support is more limited. A dedicated
-VS Code extension would need to handle filetype→injection mapping
-in its `package.json` contribution points.
+dedicated extensions). Injection support is more limited than Neovim/Zed.
+
+**Modeline**: Depends on the extension's injection implementation. A
+dedicated VS Code extension would need to explicitly support
+content-driven injection from the modeline node.
+
+**Filetype mapping**: Configured in the extension's `package.json`
+contribution points. The extension should register all suffixed
+file types.
+
+**Alternative injection files**: Not directly supported by VS Code's
+tree-sitter integration. The extension would need to bundle the
+appropriate injection file or expose a setting.
 
 ### Zed
 
-Zed has native tree-sitter support with injection queries. The
-`injections.scm` file works the same as in Neovim. Filetype overrides
-are configured in Zed's `languages.toml`.
+Zed has native tree-sitter support with injection queries.
+
+**Modeline**: Works natively. Zed supports content-driven injection
+the same way Neovim does.
+
+**Filetype mapping**: Configured in Zed's `languages.toml` within
+the language extension. The extension should register all suffixed
+file types.
+
+**Query override**: Users can override injection queries via
+Zed's language extension config, similar to Neovim's approach.
 
 ## Implementation Plan
 
@@ -383,10 +611,12 @@ are configured in Zed's `languages.toml`.
 1. Add new token types to `enum TokenType` in scanner.c
 2. Add template delimiter scanning logic to the external scanner
 3. Add `bare_string_fragment` token (same scan logic as bare_string)
-4. Update grammar.js with new rules
-5. Update highlights.scm with template delimiter highlighting
-6. Create injections.scm
-7. Add test corpus files for each template pattern
+4. Add modeline scanning (`# nats-template-dialect:`) to the external scanner
+5. Update grammar.js with new rules (template nodes + modeline)
+6. Update highlights.scm with template delimiter highlighting
+7. Create injections.scm (modeline-aware with static fallbacks)
+8. Ship alternative injection files (gotmpl, erb-only, none)
+9. Add test corpus files for each template pattern + modeline
 
 ### Phase 2: File Types + Editor Integration (follow-up)
 
@@ -424,3 +654,25 @@ are configured in Zed's `languages.toml`.
 3. **What tree-sitter grammar names do editors use for Jinja2 and Go
    templates?** This affects the `injection.language` strings. Neovim
    uses `jinja` (not `jinja2`). We should verify across target editors.
+
+4. **Modeline placement**: Should `# nats-template-dialect:` be required
+   at the top of the file (first non-blank line, like vim modelines)?
+   Or anywhere (like Emacs file-local variables)? Top-of-file is simpler
+   to implement and more predictable; anywhere is more flexible but
+   requires scanning the full file.
+
+5. **Modeline and content-driven injection interaction**: The exact
+   mechanism for making the modeline's dialect name flow to all
+   template content nodes needs prototyping. Markdown does this with
+   fenced code blocks because the info string and content are in the
+   same parent node. Our modeline is a sibling of template nodes, not
+   a parent. We may need editor-specific query patterns, or we may
+   need to restructure so that the modeline's dialect name is
+   accessible from the injection query context. This is the riskiest
+   part of the modeline design and needs a spike.
+
+6. **`# nats-template-dialect: none`**: Should this disable template
+   delimiter recognition entirely (scanner level), or just suppress
+   injection (query level)? Query-level is simpler — delimiters still
+   parse as template nodes but no language is injected, so they just
+   get generic `@embedded` highlighting.
