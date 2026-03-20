@@ -1,0 +1,68 @@
+===
+ERB interpolation as value
+===
+
+server_name: <%= server_name %>
+
+---
+
+(source_file
+  (pair
+    key: (identifier)
+    value: (templated_value
+      (erb_interpolation
+        (erb_interpolation_content)))))
+
+===
+ERB tag at statement level
+===
+
+<% if enable_tls %>
+port: 4222
+<% end %>
+
+---
+
+(source_file
+  (erb_tag
+    (erb_tag_content))
+  (pair
+    key: (identifier)
+    value: (number))
+  (erb_tag
+    (erb_tag_content)))
+
+===
+ERB comment
+===
+
+<%# This is an ERB comment %>
+port: 4222
+
+---
+
+(source_file
+  (erb_comment
+    (erb_comment_content))
+  (pair
+    key: (identifier)
+    value: (number)))
+
+===
+ERB trim markers
+===
+
+<%- if x -%>
+port: 4222
+<%- end -%>
+
+---
+
+(source_file
+  (erb_tag
+    (erb_tag_content))
+  (pair
+    key: (identifier)
+    value: (number))
+  (erb_tag
+    (erb_tag_content)))

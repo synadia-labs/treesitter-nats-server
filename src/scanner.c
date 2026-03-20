@@ -1,6 +1,6 @@
 // External scanner for tree-sitter-nats-server-conf.
 //
-// Handles four token types that require context-sensitive lexing:
+// Handles token types that require context-sensitive lexing:
 //
 // 1. bare_string: Unquoted string values containing special characters
 //    like :, /, -, . (e.g., nats-route://host:6222, /var/lib/nats)
@@ -11,6 +11,14 @@
 // 3. identifier: Word tokens used as keys and block names.
 //
 // 4. boolean: true/false/yes/no/on/off values.
+//
+// 5. Template content tokens: opaque text between template delimiters
+//    ({{ }}, {% %}, {# #}, <%= %>, <% %>, <%# %>).
+//
+// 6. bare_string_fragment: Like bare_string but used inside templated_value
+//    composites.
+//
+// 7. template_dialect_name: The dialect word after "# nats-template-dialect:".
 //
 // All letter-starting tokens are external so the scanner can look ahead
 // and produce the correct token type based on what follows.
@@ -24,6 +32,15 @@ enum TokenType {
   COMMENT,
   IDENTIFIER,
   BOOLEAN,
+  // Template content tokens — opaque text between delimiters
+  TEMPLATE_INTERPOLATION_CONTENT,  // content between {{ }}
+  TEMPLATE_TAG_CONTENT,            // content between {% %} or {%- -%}
+  TEMPLATE_COMMENT_CONTENT,        // content between {# #}
+  ERB_INTERPOLATION_CONTENT,       // content between <%= %>
+  ERB_TAG_CONTENT,                 // content between <% %> or <%- -%>
+  ERB_COMMENT_CONTENT,             // content between <%# %>
+  BARE_STRING_FRAGMENT,            // bare_string that stops at template delimiters
+  TEMPLATE_DIALECT_NAME,           // dialect name word after modeline marker
 };
 
 // The NATS config lexer (conf/lex.go) is very permissive with identifiers:
@@ -115,6 +132,76 @@ static bool is_boolean_word(const char *buf, int len) {
   return false;
 }
 
+// Scan opaque template content until a closing delimiter is found.
+// closing1 and closing2 form the 2-char closing delimiter (e.g., '}' '}' or '%' '}').
+// If allow_trim is true, an optional '-' before the closing delimiter is consumed
+// (e.g., -%} or -%>).
+static bool scan_template_content(TSLexer *lexer, int result_symbol,
+                                  int32_t closing1, int32_t closing2,
+                                  bool allow_trim) {
+  // Skip leading whitespace (not part of content)
+  while (!lexer->eof(lexer) &&
+         (lexer->lookahead == ' ' || lexer->lookahead == '\t')) {
+    lexer->advance(lexer, false);
+  }
+  lexer->mark_end(lexer);
+
+  while (!lexer->eof(lexer)) {
+    // Check for optional trim marker before closing delimiter
+    if (allow_trim && lexer->lookahead == '-') {
+      lexer->mark_end(lexer);
+      lexer->advance(lexer, false);
+      if (!lexer->eof(lexer) && lexer->lookahead == closing1) {
+        lexer->advance(lexer, false);
+        if (!lexer->eof(lexer) && lexer->lookahead == closing2) {
+          // Found -closing — mark_end was set before the '-'
+          lexer->result_symbol = result_symbol;
+          return true;
+        }
+      }
+      // Not a trim+close, continue scanning
+      continue;
+    }
+
+    if (lexer->lookahead == closing1) {
+      lexer->mark_end(lexer);
+      lexer->advance(lexer, false);
+      if (!lexer->eof(lexer) && lexer->lookahead == closing2) {
+        // Found closing delimiter — mark_end is before it
+        lexer->result_symbol = result_symbol;
+        return true;
+      }
+      // Single char wasn't the start of the close delimiter, continue
+      continue;
+    }
+
+    lexer->advance(lexer, false);
+  }
+  return false;  // EOF without finding closing delimiter
+}
+
+// Scan template content for ERB-style delimiters where the closing is %>.
+// This shares logic with scan_template_content but closing is always '%' '>'.
+static bool scan_erb_content(TSLexer *lexer, int result_symbol) {
+  return scan_template_content(lexer, result_symbol, '%', '>', true);
+}
+
+// Check if the rest of the comment line (after '#') matches
+// " nats-template-dialect:" and if so, leave the lexer positioned
+// after the colon. Returns true if matched.
+static bool check_modeline_prefix(TSLexer *lexer) {
+  // We've already consumed '#'. Expect exactly:
+  //   ' nats-template-dialect:'
+  const char *expected = " nats-template-dialect:";
+  for (int i = 0; expected[i] != '\0'; i++) {
+    if (lexer->eof(lexer) || lexer->lookahead != (int32_t)expected[i]) {
+      return false;
+    }
+    lexer->advance(lexer, false);
+  }
+  return true;
+}
+
 void *tree_sitter_nats_server_conf_external_scanner_create(void) {
   return NULL;
 }
@@ -129,8 +216,75 @@ unsigned tree_sitter_nats_server_conf_external_scanner_serialize(
 void tree_sitter_nats_server_conf_external_scanner_deserialize(
     void *p, const char *buf, unsigned len) {}
 
+// Check if any template content token is valid in the current parse state.
+static bool any_template_content_valid(const bool *valid_symbols) {
+  return valid_symbols[TEMPLATE_INTERPOLATION_CONTENT] ||
+         valid_symbols[TEMPLATE_TAG_CONTENT] ||
+         valid_symbols[TEMPLATE_COMMENT_CONTENT] ||
+         valid_symbols[ERB_INTERPOLATION_CONTENT] ||
+         valid_symbols[ERB_TAG_CONTENT] ||
+         valid_symbols[ERB_COMMENT_CONTENT];
+}
+
 bool tree_sitter_nats_server_conf_external_scanner_scan(
     void *payload, TSLexer *lexer, const bool *valid_symbols) {
+
+  // --- Handle template content scanning ---
+  // When the grammar has matched an opening delimiter (e.g., '{{'),
+  // the parser expects content. We scan opaque text until the
+  // matching closing delimiter.
+  if (valid_symbols[TEMPLATE_INTERPOLATION_CONTENT] &&
+      !valid_symbols[IDENTIFIER]) {
+    return scan_template_content(lexer, TEMPLATE_INTERPOLATION_CONTENT,
+                                 '}', '}', false);
+  }
+  if (valid_symbols[TEMPLATE_TAG_CONTENT] && !valid_symbols[IDENTIFIER]) {
+    return scan_template_content(lexer, TEMPLATE_TAG_CONTENT,
+                                 '%', '}', true);
+  }
+  if (valid_symbols[TEMPLATE_COMMENT_CONTENT] && !valid_symbols[IDENTIFIER]) {
+    return scan_template_content(lexer, TEMPLATE_COMMENT_CONTENT,
+                                 '#', '}', false);
+  }
+  if (valid_symbols[ERB_INTERPOLATION_CONTENT] && !valid_symbols[IDENTIFIER]) {
+    return scan_erb_content(lexer, ERB_INTERPOLATION_CONTENT);
+  }
+  if (valid_symbols[ERB_TAG_CONTENT] && !valid_symbols[IDENTIFIER]) {
+    return scan_erb_content(lexer, ERB_TAG_CONTENT);
+  }
+  if (valid_symbols[ERB_COMMENT_CONTENT] && !valid_symbols[IDENTIFIER]) {
+    return scan_erb_content(lexer, ERB_COMMENT_CONTENT);
+  }
+
+  // --- Handle template dialect name ---
+  // After the grammar matches "# nats-template-dialect:", we scan the
+  // dialect name word.
+  if (valid_symbols[TEMPLATE_DIALECT_NAME] && !valid_symbols[IDENTIFIER]) {
+    // Skip whitespace after the colon
+    while (!lexer->eof(lexer) &&
+           (lexer->lookahead == ' ' || lexer->lookahead == '\t')) {
+      lexer->advance(lexer, true);
+    }
+    if (lexer->eof(lexer)) return false;
+
+    // Scan a word: [a-zA-Z][a-zA-Z0-9_-]*
+    if (!((lexer->lookahead >= 'a' && lexer->lookahead <= 'z') ||
+          (lexer->lookahead >= 'A' && lexer->lookahead <= 'Z'))) {
+      return false;
+    }
+
+    lexer->mark_end(lexer);
+    while (!lexer->eof(lexer) &&
+           ((lexer->lookahead >= 'a' && lexer->lookahead <= 'z') ||
+            (lexer->lookahead >= 'A' && lexer->lookahead <= 'Z') ||
+            (lexer->lookahead >= '0' && lexer->lookahead <= '9') ||
+            lexer->lookahead == '_' || lexer->lookahead == '-')) {
+      lexer->advance(lexer, false);
+    }
+    lexer->mark_end(lexer);
+    lexer->result_symbol = TEMPLATE_DIALECT_NAME;
+    return true;
+  }
 
   // Skip whitespace — this is necessary because the internal lexer's
   // SKIP() mechanism doesn't re-invoke the external scanner after skipping.
@@ -146,21 +300,67 @@ bool tree_sitter_nats_server_conf_external_scanner_scan(
 
   int32_t c = lexer->lookahead;
 
-  // --- Handle # comments (always unambiguous) ---
-  if (valid_symbols[COMMENT] && c == '#') {
-    lexer->advance(lexer, false);
-    while (!lexer->eof(lexer) && lexer->lookahead != '\n') {
-      lexer->advance(lexer, false);
+  // --- Handle # comments and modeline ---
+  // The modeline "# nats-template-dialect: <name>" is detected here.
+  // If it matches, we return COMMENT for the prefix portion, letting
+  // the grammar rule handle the modeline structure.
+  // Actually: we produce a COMMENT token for normal # comments,
+  // but for the modeline we need to NOT match so the grammar's
+  // template_dialect_modeline rule can match instead.
+  if (c == '#') {
+    if (valid_symbols[COMMENT]) {
+      // Peek ahead to check for modeline pattern
+      lexer->advance(lexer, false);  // consume '#'
+
+      // Save position — check if this is a modeline
+      // We need to check " nats-template-dialect:" follows
+      if (!lexer->eof(lexer) && lexer->lookahead == ' ') {
+        // Tentatively scan for modeline prefix
+        // But we can't "unread" in tree-sitter, so we use mark_end
+        // to control what gets consumed.
+        lexer->mark_end(lexer);  // mark after '#'
+
+        const char *expected = " nats-template-dialect:";
+        bool is_modeline = true;
+        for (int i = 0; expected[i] != '\0'; i++) {
+          if (lexer->eof(lexer) || lexer->lookahead != (int32_t)expected[i]) {
+            is_modeline = false;
+            break;
+          }
+          lexer->advance(lexer, false);
+        }
+
+        if (is_modeline) {
+          // This IS a modeline. Return false so the grammar's
+          // internal lexer can match the '#' and 'nats-template-dialect:'
+          // literals in the template_dialect_modeline rule.
+          return false;
+        }
+
+        // Not a modeline — consume the rest as a regular comment
+        // We've already advanced past '#' and some chars. Read to EOL.
+        while (!lexer->eof(lexer) && lexer->lookahead != '\n') {
+          lexer->advance(lexer, false);
+        }
+        lexer->mark_end(lexer);
+        lexer->result_symbol = COMMENT;
+        return true;
+      }
+
+      // Not starting with space after # — regular comment
+      while (!lexer->eof(lexer) && lexer->lookahead != '\n') {
+        lexer->advance(lexer, false);
+      }
+      lexer->mark_end(lexer);
+      lexer->result_symbol = COMMENT;
+      return true;
     }
-    lexer->mark_end(lexer);
-    lexer->result_symbol = COMMENT;
-    return true;
   }
 
   // --- Handle tokens starting with letters or _ ---
   if (is_ident_start(c) &&
       (valid_symbols[IDENTIFIER] || valid_symbols[BARE_STRING] ||
-       valid_symbols[BOOLEAN])) {
+       valid_symbols[BOOLEAN] || valid_symbols[BARE_STRING_FRAGMENT])) {
 
     // Scan the identifier portion
     char word_buf[16];
@@ -177,7 +377,8 @@ bool tree_sitter_nats_server_conf_external_scanner_scan(
     lexer->mark_end(lexer);
 
     // Check if bare_string chars follow (like - : / in URLs)
-    if (valid_symbols[BARE_STRING] && !lexer->eof(lexer) &&
+    if ((valid_symbols[BARE_STRING] || valid_symbols[BARE_STRING_FRAGMENT]) &&
+        !lexer->eof(lexer) &&
         is_bare_char(lexer->lookahead) && !is_ident_char(lexer->lookahead) &&
         lexer->lookahead != '\n') {
       // Special chars follow — this is a bare_string (e.g., nats-route://...)
@@ -186,7 +387,9 @@ bool tree_sitter_nats_server_conf_external_scanner_scan(
         lexer->advance(lexer, false);
       }
       lexer->mark_end(lexer);
-      lexer->result_symbol = BARE_STRING;
+      // Prefer BARE_STRING over BARE_STRING_FRAGMENT when both are valid
+      lexer->result_symbol = valid_symbols[BARE_STRING]
+                               ? BARE_STRING : BARE_STRING_FRAGMENT;
       return true;
     }
 
@@ -209,9 +412,14 @@ bool tree_sitter_nats_server_conf_external_scanner_scan(
       return true;
     }
 
-    // Fallback: if only bare_string is valid, return as bare_string
+    // Fallback: if bare_string or fragment is valid, return as such
+    // Prefer BARE_STRING over BARE_STRING_FRAGMENT
     if (valid_symbols[BARE_STRING]) {
       lexer->result_symbol = BARE_STRING;
+      return true;
+    }
+    if (valid_symbols[BARE_STRING_FRAGMENT]) {
+      lexer->result_symbol = BARE_STRING_FRAGMENT;
       return true;
     }
 
@@ -232,20 +440,22 @@ bool tree_sitter_nats_server_conf_external_scanner_scan(
       lexer->result_symbol = COMMENT;
       return true;
     }
-    if (valid_symbols[BARE_STRING]) {
+    if (valid_symbols[BARE_STRING] || valid_symbols[BARE_STRING_FRAGMENT]) {
       while (!lexer->eof(lexer) && is_bare_char(lexer->lookahead) &&
              lexer->lookahead != '\n') {
         lexer->advance(lexer, false);
       }
       lexer->mark_end(lexer);
-      lexer->result_symbol = BARE_STRING;
+      lexer->result_symbol = valid_symbols[BARE_STRING]
+                               ? BARE_STRING : BARE_STRING_FRAGMENT;
       return true;
     }
     return false;
   }
 
   // --- Handle bare strings starting with /, ~, ., or digits ---
-  if (valid_symbols[BARE_STRING] && is_bare_only_start(c)) {
+  if ((valid_symbols[BARE_STRING] || valid_symbols[BARE_STRING_FRAGMENT]) &&
+      is_bare_only_start(c)) {
     bool starts_with_digit = (c >= '0' && c <= '9');
     int dot_count = 0;
     int length = 0;
@@ -269,7 +479,8 @@ bool tree_sitter_nats_server_conf_external_scanner_scan(
       // IP addresses have 2+ dots: 127.0.0.1, 0.0.0.0
       if (dot_count >= 2) {
         lexer->mark_end(lexer);
-        lexer->result_symbol = BARE_STRING;
+        lexer->result_symbol = valid_symbols[BARE_STRING]
+                                 ? BARE_STRING : BARE_STRING_FRAGMENT;
         return true;
       }
       // Check if it's a number with a valid suffix (like 1GB, 64KB, 30s)
@@ -292,14 +503,34 @@ bool tree_sitter_nats_server_conf_external_scanner_scan(
         }
         // Has non-suffix chars — it's a bare_string
         lexer->mark_end(lexer);
-        lexer->result_symbol = BARE_STRING;
+        lexer->result_symbol = valid_symbols[BARE_STRING]
+                                 ? BARE_STRING : BARE_STRING_FRAGMENT;
         return true;
       }
       return false;
     }
 
     lexer->mark_end(lexer);
-    lexer->result_symbol = BARE_STRING;
+    lexer->result_symbol = valid_symbols[BARE_STRING]
+                             ? BARE_STRING : BARE_STRING_FRAGMENT;
+    return true;
+  }
+
+  // --- Handle bare_string_fragment for mid-value chars ---
+  // Inside a templated_value, chars like : @ ! can appear between
+  // template directives (e.g., {{ host }}:{{ port }}). These chars
+  // are valid bare_char but don't start identifiers or bare_only_start.
+  // We exclude '-' followed by a digit (negative numbers) to avoid
+  // consuming the sign of a negative integer.
+  if (valid_symbols[BARE_STRING_FRAGMENT] && !valid_symbols[BARE_STRING] &&
+      is_bare_char(c) && c != '\n') {
+    lexer->mark_end(lexer);
+    while (!lexer->eof(lexer) && is_bare_char(lexer->lookahead) &&
+           lexer->lookahead != '\n') {
+      lexer->advance(lexer, false);
+    }
+    lexer->mark_end(lexer);
+    lexer->result_symbol = BARE_STRING_FRAGMENT;
     return true;
   }
 

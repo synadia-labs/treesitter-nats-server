@@ -55,11 +55,35 @@
           "named": true
         },
         {
+          "type": "erb_comment",
+          "named": true
+        },
+        {
+          "type": "erb_interpolation",
+          "named": true
+        },
+        {
+          "type": "erb_tag",
+          "named": true
+        },
+        {
           "type": "include_directive",
           "named": true
         },
         {
           "type": "pair",
+          "named": true
+        },
+        {
+          "type": "template_comment",
+          "named": true
+        },
+        {
+          "type": "template_interpolation",
+          "named": true
+        },
+        {
+          "type": "template_tag",
           "named": true
         }
       ]
@@ -89,6 +113,51 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "erb_comment",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "erb_comment_content",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "erb_interpolation",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "erb_interpolation_content",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "erb_tag",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "erb_tag_content",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -152,6 +221,10 @@
             "named": true
           },
           {
+            "type": "templated_value",
+            "named": true
+          },
+          {
             "type": "variable_reference",
             "named": true
           }
@@ -177,11 +250,39 @@
           "named": true
         },
         {
+          "type": "erb_comment",
+          "named": true
+        },
+        {
+          "type": "erb_interpolation",
+          "named": true
+        },
+        {
+          "type": "erb_tag",
+          "named": true
+        },
+        {
           "type": "include_directive",
           "named": true
         },
         {
           "type": "pair",
+          "named": true
+        },
+        {
+          "type": "template_comment",
+          "named": true
+        },
+        {
+          "type": "template_dialect_modeline",
+          "named": true
+        },
+        {
+          "type": "template_interpolation",
+          "named": true
+        },
+        {
+          "type": "template_tag",
           "named": true
         }
       ]
@@ -203,11 +304,139 @@
     }
   },
   {
+    "type": "template_comment",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "template_comment_content",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "template_dialect_modeline",
+    "named": true,
+    "fields": {
+      "dialect": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "template_dialect_name",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "template_interpolation",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "template_interpolation_content",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "template_tag",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "template_tag_content",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "templated_value",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "bare_string",
+          "named": true
+        },
+        {
+          "type": "bare_string_fragment",
+          "named": true
+        },
+        {
+          "type": "erb_interpolation",
+          "named": true
+        },
+        {
+          "type": "template_interpolation",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "#",
+    "named": false
+  },
+  {
+    "type": "#}",
+    "named": false
+  },
+  {
+    "type": "%>",
+    "named": false
+  },
+  {
+    "type": "%}",
+    "named": false
+  },
+  {
     "type": ",",
     "named": false
   },
   {
+    "type": "-%>",
+    "named": false
+  },
+  {
+    "type": "-%}",
+    "named": false
+  },
+  {
     "type": ":",
+    "named": false
+  },
+  {
+    "type": "<%",
+    "named": false
+  },
+  {
+    "type": "<%#",
+    "named": false
+  },
+  {
+    "type": "<%-",
+    "named": false
+  },
+  {
+    "type": "<%=",
     "named": false
   },
   {
@@ -227,11 +456,27 @@
     "named": true
   },
   {
+    "type": "bare_string_fragment",
+    "named": true
+  },
+  {
     "type": "boolean",
     "named": true
   },
   {
     "type": "comment",
+    "named": true
+  },
+  {
+    "type": "erb_comment_content",
+    "named": true
+  },
+  {
+    "type": "erb_interpolation_content",
+    "named": true
+  },
+  {
+    "type": "erb_tag_content",
     "named": true
   },
   {
@@ -243,7 +488,27 @@
     "named": true
   },
   {
+    "type": "nats-template-dialect:",
+    "named": false
+  },
+  {
     "type": "number",
+    "named": true
+  },
+  {
+    "type": "template_comment_content",
+    "named": true
+  },
+  {
+    "type": "template_dialect_name",
+    "named": true
+  },
+  {
+    "type": "template_interpolation_content",
+    "named": true
+  },
+  {
+    "type": "template_tag_content",
     "named": true
   },
   {
@@ -255,7 +520,27 @@
     "named": false
   },
   {
+    "type": "{#",
+    "named": false
+  },
+  {
+    "type": "{%",
+    "named": false
+  },
+  {
+    "type": "{%-",
+    "named": false
+  },
+  {
+    "type": "{{",
+    "named": false
+  },
+  {
     "type": "}",
+    "named": false
+  },
+  {
+    "type": "}}",
     "named": false
   }
 ]

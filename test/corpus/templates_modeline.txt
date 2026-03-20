@@ -1,0 +1,50 @@
+===
+Template dialect modeline jinja2
+===
+
+# nats-template-dialect: jinja2
+port: {{ port }}
+
+---
+
+(source_file
+  (template_dialect_modeline
+    dialect: (template_dialect_name))
+  (pair
+    key: (identifier)
+    value: (templated_value
+      (template_interpolation
+        (template_interpolation_content)))))
+
+===
+Template dialect modeline gotmpl
+===
+
+# nats-template-dialect: gotmpl
+port: {{ .Port }}
+
+---
+
+(source_file
+  (template_dialect_modeline
+    dialect: (template_dialect_name))
+  (pair
+    key: (identifier)
+    value: (templated_value
+      (template_interpolation
+        (template_interpolation_content)))))
+
+===
+Regular comment is not a modeline
+===
+
+# this is just a comment
+port: 4222
+
+---
+
+(source_file
+  (comment)
+  (pair
+    key: (identifier)
+    value: (number)))

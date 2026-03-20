@@ -14,6 +14,14 @@
           {
             "type": "SYMBOL",
             "name": "comment"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_template_directive"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "template_dialect_modeline"
           }
         ]
       }
@@ -130,6 +138,10 @@
               {
                 "type": "STRING",
                 "value": ","
+              },
+              {
+                "type": "SYMBOL",
+                "name": "_template_directive"
               }
             ]
           }
@@ -196,6 +208,10 @@
         {
           "type": "SYMBOL",
           "name": "array"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "templated_value"
         }
       ]
     },
@@ -419,6 +435,314 @@
           "name": "block"
         }
       ]
+    },
+    "_template_directive": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "template_interpolation"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "template_tag"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "template_comment"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "erb_interpolation"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "erb_tag"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "erb_comment"
+        }
+      ]
+    },
+    "_template_value_interpolation": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "template_interpolation"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "erb_interpolation"
+        }
+      ]
+    },
+    "template_interpolation": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "{{"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "template_interpolation_content"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "STRING",
+          "value": "}}"
+        }
+      ]
+    },
+    "template_tag": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "{%"
+            },
+            {
+              "type": "STRING",
+              "value": "{%-"
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "template_tag_content"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "%}"
+            },
+            {
+              "type": "STRING",
+              "value": "-%}"
+            }
+          ]
+        }
+      ]
+    },
+    "template_comment": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "{#"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "template_comment_content"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "STRING",
+          "value": "#}"
+        }
+      ]
+    },
+    "erb_interpolation": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "<%="
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "erb_interpolation_content"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "%>"
+            },
+            {
+              "type": "STRING",
+              "value": "-%>"
+            }
+          ]
+        }
+      ]
+    },
+    "erb_tag": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "<%"
+            },
+            {
+              "type": "STRING",
+              "value": "<%-"
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "erb_tag_content"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "%>"
+            },
+            {
+              "type": "STRING",
+              "value": "-%>"
+            }
+          ]
+        }
+      ]
+    },
+    "erb_comment": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "<%#"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "erb_comment_content"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "%>"
+            },
+            {
+              "type": "STRING",
+              "value": "-%>"
+            }
+          ]
+        }
+      ]
+    },
+    "templated_value": {
+      "type": "PREC_RIGHT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "bare_string"
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          },
+          {
+            "type": "SYMBOL",
+            "name": "_template_value_interpolation"
+          },
+          {
+            "type": "REPEAT",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "bare_string_fragment"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "_template_value_interpolation"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "template_dialect_modeline": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "#"
+        },
+        {
+          "type": "STRING",
+          "value": "nats-template-dialect:"
+        },
+        {
+          "type": "FIELD",
+          "name": "dialect",
+          "content": {
+            "type": "SYMBOL",
+            "name": "template_dialect_name"
+          }
+        }
+      ]
     }
   },
   "extras": [
@@ -427,7 +751,12 @@
       "value": "\\s"
     }
   ],
-  "conflicts": [],
+  "conflicts": [
+    [
+      "string",
+      "templated_value"
+    ]
+  ],
   "precedences": [],
   "externals": [
     {
@@ -445,6 +774,38 @@
     {
       "type": "SYMBOL",
       "name": "boolean"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "template_interpolation_content"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "template_tag_content"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "template_comment_content"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "erb_interpolation_content"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "erb_tag_content"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "erb_comment_content"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "bare_string_fragment"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "template_dialect_name"
     }
   ],
   "inline": [],

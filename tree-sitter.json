@@ -7,9 +7,15 @@
       "injection-regex": "nats[_-](?:server[_-])?conf",
       "path": ".",
       "file-types": [
-        "conf"
+        "conf",
+        { "suffix": ".conf.j2" },
+        { "suffix": ".conf.jinja" },
+        { "suffix": ".conf.jinja2" },
+        { "suffix": ".conf.gotmpl" },
+        { "suffix": ".conf.erb" }
       ],
       "highlights": "queries/highlights.scm",
+      "injections": "queries/injections.scm",
       "folds": "queries/folds.scm",
       "indents": "queries/indents.scm",
       "locals": "queries/locals.scm"

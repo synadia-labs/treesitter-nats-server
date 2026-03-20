@@ -1,0 +1,159 @@
+===
+Jinja2 interpolation as value
+===
+
+server_name: {{ hostname }}
+
+---
+
+(source_file
+  (pair
+    key: (identifier)
+    value: (templated_value
+      (template_interpolation
+        (template_interpolation_content)))))
+
+===
+Jinja2 tag at statement level
+===
+
+{% if enable_tls %}
+port: 4222
+{% endif %}
+
+---
+
+(source_file
+  (template_tag
+    (template_tag_content))
+  (pair
+    key: (identifier)
+    value: (number))
+  (template_tag
+    (template_tag_content)))
+
+===
+Jinja2 comment
+===
+
+{# This is a template comment #}
+port: 4222
+
+---
+
+(source_file
+  (template_comment
+    (template_comment_content))
+  (pair
+    key: (identifier)
+    value: (number)))
+
+===
+Jinja2 for loop wrapping block
+===
+
+{% for node in nodes %}
+cluster {
+  name: {{ node.name }}
+}
+{% endfor %}
+
+---
+
+(source_file
+  (template_tag
+    (template_tag_content))
+  (block_definition
+    name: (identifier)
+    body: (block
+      (pair
+        key: (identifier)
+        value: (templated_value
+          (template_interpolation
+            (template_interpolation_content))))))
+  (template_tag
+    (template_tag_content)))
+
+===
+Jinja2 if wrapping pairs inside block
+===
+
+tls {
+  cert_file: /path/to/cert
+  {% if mutual_tls %}
+  ca_file: /path/to/ca
+  {% endif %}
+}
+
+---
+
+(source_file
+  (block_definition
+    name: (identifier)
+    body: (block
+      (pair
+        key: (identifier)
+        value: (string
+          (bare_string)))
+      (template_tag
+        (template_tag_content))
+      (pair
+        key: (identifier)
+        value: (string
+          (bare_string)))
+      (template_tag
+        (template_tag_content)))))
+
+===
+Jinja2 trim markers
+===
+
+{%- if x -%}
+port: 4222
+{%- endif -%}
+
+---
+
+(source_file
+  (template_tag
+    (template_tag_content))
+  (pair
+    key: (identifier)
+    value: (number))
+  (template_tag
+    (template_tag_content)))
+
+===
+Jinja2 interpolation in composite value
+===
+
+cert_file: /etc/{{ hostname }}/cert.pem
+
+---
+
+(source_file
+  (pair
+    key: (identifier)
+    value: (templated_value
+      (bare_string)
+      (template_interpolation
+        (template_interpolation_content))
+      (bare_string_fragment))))
+
+===
+Multiple template interpolations in value
+===
+
+listen: {{ bind_address }}:{{ port }}
+
+---
+
+(source_file
+  (pair
+    key: (identifier)
+    value: (templated_value
+      (template_interpolation
+        (template_interpolation_content))
+      (bare_string_fragment)
+      (template_interpolation
+        (template_interpolation_content)))))
